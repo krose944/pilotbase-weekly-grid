@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pilotbase | Flight Operations</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        pbOrange: '#f26c2e', pbOrangeMid: '#f3781f', pbOrangeLight: '#f6a345',
+                        pbDark: '#0f172a', pbPanel: '#1e293b', pbBg: '#f8fafc',
+                    },
+                    borderRadius: { '3xl': '1.5rem', '4xl': '2.5rem' }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        .schedule-grid-container { display: grid; grid-template-columns: 80px repeat(6, 1fr); min-width: 1000px; }
+        .ghost-res { background: repeating-linear-gradient(45deg, #f1f5f9, #f1f5f9 10px, #e2e8f0 10px, #e2e8f0 20px); opacity: 0.7; pointer-events: none; }
+        .slide-in { animation: slideIn 0.3s ease-out forwards; }
+        @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+    </style>
+</head>
+<body class="bg-pbBg text-slate-800 antialiased h-screen overflow-hidden flex flex-col">
+
+    <div id="view-login" class="absolute inset-0 z-50 bg-slate-900 flex items-center justify-center bg-cover bg-center" style="background-image: radial-gradient(circle at top right, rgba(242,108,46,.2), transparent 40%), linear-gradient(180deg, #0f172a, #020617);">
+        <div class="max-w-md w-full bg-white rounded-4xl shadow-2xl p-12 text-center">
+            
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" class="mx-auto mb-6 h-20 w-auto">
+              <path d="M5274.1714 1568.0642v-159c0-125.0223-101.4777-226.5001-226.5-226.5001s-226.5 101.4778-226.5 226.5001v159c0 73.7345-58.7656 132.5001-132.5 132.5001s-132.5-58.7656-132.5-132.5001v-159" style="fill:none;stroke:#f6a345;stroke-width:188;stroke-miterlimit:0;stroke-dasharray:none;stroke-opacity:1" transform="translate(-4368.1716 -1088.5641)"/>
+              <path d="M5180.1714 1568.0642v-159c0-73.1585-59.3416-132.5001-132.5-132.5001s-132.5 59.3416-132.5 132.5001v159c0 124.5359-101.9642 226.5001-226.5 226.5001s-226.5-101.9642-226.5-226.5001v-159" style="fill:none;stroke:#f26c2e;stroke-width:188;stroke-miterlimit:0;stroke-dasharray:none;stroke-opacity:1" transform="translate(-4368.1716 -1088.5641)"/>
+              <path d="M5227.1714 1568.0642v-159c0-99.1352-80.3649-179.5001-179.5-179.5001s-179.5 80.3649-179.5 179.5001v159c0 99.1352-80.3649 179.5001-179.5 179.5001s-179.5-80.3649-179.5-179.5001v-159" style="fill:none;stroke:#f3781f;stroke-width:94;stroke-miterlimit:0;stroke-dasharray:none;stroke-opacity:1" transform="translate(-4368.1716 -1088.5641)"/>
+            </svg>
+            
+            <h1 class="text-3xl font-black italic uppercase tracking-tighter mb-2">PILOT<span class="text-pbOrange">BASE</span></h1>
+            <p class="text-slate-500 text-sm font-bold mb-8">Flight Ops Command Center</p>
+            <div class="space-y-4">
+                <input type="email" value="krose@pilotbase.com" class="w-full px-5 py-4 rounded-xl bg-slate-50 border border-slate-200 font-bold focus:ring-2 focus:ring-pbOrange outline-none" readonly>
+                <button onclick="login()" class="w-full bg-pbOrange hover:bg-pbOrangeMid text-white font-black py-4 rounded-xl shadow-lg transition uppercase tracking-widest text-sm">Enter Workspace</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-shell" class="hidden flex-1 flex overflow-hidden">
+        
+        <aside class="w-64 bg-pbDark text-white flex flex-col z-20 shadow-2xl">
+            <div class="p-6 flex items-center space-x-3 border-b border-white/10">
+                
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 800" class="h-8 w-auto">
+                  <path d="M5274.1714 1568.0642v-159c0-125.0223-101.4777-226.5001-226.5-226.5001s-226.5 101.4778-226.5 226.5001v159c0 73.7345-58.7656 132.5001-132.5 132.5001s-132.5-58.7656-132.5-132.5001v-159" style="fill:none;stroke:#f6a345;stroke-width:188;stroke-miterlimit:0;stroke-dasharray:none;stroke-opacity:1" transform="translate(-4368.1716 -1088.5641)"/>
+                  <path d="M5180.1714 1568.0642v-159c0-73.1585-59.3416-132.5001-132.5-132.5001s-132.5 59.3416-132.5 132.5001v159c0 124.5359-101.9642 226.5001-226.5 226.5001s-226.5-101.9642-226.5-226.5001v-159" style="fill:none;stroke:#f26c2e;stroke-width:188;stroke-miterlimit:0;stroke-dasharray:none;stroke-opacity:1" transform="translate(-4368.1716 -1088.5641)"/>
+                  <path d="M5227.1714 1568.0642v-159c0-99.1352-80.3649-179.5001-179.5-179.5001s-179.5 80.3649-179.5 179.5001v159c0 99.1352-80.3649 179.5001-179.5 179.5001s-179.5-80.3649-179.5-179.5001v-159" style="fill:none;stroke:#f3781f;stroke-width:94;stroke-miterlimit:0;stroke-dasharray:none;stroke-opacity:1" transform="translate(-4368.1716 -1088.5641)"/>
+                </svg>
+
+                <h1 class="text-xl font-black italic uppercase">PILOT<span class="text-pbOrange">BASE</span></h1>
+            </div>
+            <nav class="flex-1 p-4 space-y-2 overflow-y-auto">
+                <button onclick="nav('home')" id="nav-home" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl bg-pbOrange text-white shadow-lg transition nav-btn"><i class="fas fa-home w-5 text-center"></i> <span class="font-bold">Home</span></button>
+                <button onclick="nav('training')" id="nav-training" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition nav-btn"><i class="fas fa-graduation-cap w-5 text-center"></i> <span class="font-bold">My Training</span></button>
+                <button onclick="nav('schedule')" id="nav-schedule" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition nav-btn"><i class="fas fa-calendar-alt w-5 text-center"></i> <span class="font-bold">Schedule</span></button>
+                <button onclick="nav('instructors')" id="nav-instructors" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition nav-btn"><i class="fas fa-users w-5 text-center"></i> <span class="font-bold">Instructors</span></button>
+                <button onclick="nav('aircraft')" id="nav-aircraft" class="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition nav-btn"><i class="fas fa-plane w-5 text-center"></i> <span class="font-bold">Fleet</span></button>
+            </nav>
+            <div class="p-4 border-t border-white/10">
+                <button onclick="resetData()" class="w-full mb-4 px-4 py-2 text-xs font-bold text-slate-400 border border-slate-600 rounded-lg hover:text-white hover:border-white transition">Reset Demo Data</button>
+                <div class="flex items-center space-x-3 bg-pbPanel p-3 rounded-xl">
+                    <div class="w-8 h-8 rounded-full bg-pbOrange flex items-center justify-center font-black text-xs">KR</div>
+                    <div><p class="text-xs font-black">Ken Rose</p><p class="text-[10px] text-slate-400 uppercase">Student Pilot</p></div>
+                </div>
+            </div>
+        </aside>
+
+        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
+            <header class="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-8 shrink-0">
+                <h2 id="page-title" class="text-xl font-black italic text-slate-800">Dashboard</h2>
+                <div class="flex items-center space-x-4">
+                    <span class="text-xs font-bold text-slate-400 px-3 py-1 bg-slate-100 rounded-full" id="current-date-display"></span>
+                    <button onclick="logout()" class="text-xs font-black text-slate-400 hover:text-red-500 uppercase transition">Logout</button>
+                </div>
+            </header>
+
+            <div class="flex-1 overflow-y-auto p-8 custom-scrollbar relative">
+                
+                <div id="view-home" class="app-view space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm"><p class="text-xs font-black text-slate-400 uppercase mb-1">Logged Hours</p><p class="text-4xl font-black text-pbOrange">42.5</p></div>
+                        <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm"><p class="text-xs font-black text-slate-400 uppercase mb-1">Stage Status</p><p class="text-4xl font-black text-emerald-500">68%</p></div>
+                        <div class="bg-pbDark text-white p-6 rounded-3xl shadow-lg"><p class="text-xs font-black text-pbOrange uppercase mb-1">Account Balance</p><p class="text-4xl font-black">$1,450</p></div>
+                    </div>
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+                        <h3 class="text-lg font-black mb-4 uppercase text-slate-400 tracking-widest">Next Upcoming Flight</h3>
+                        <div id="home-next-flight" class="text-slate-800"></div>
+                    </div>
+                </div>
+
+                <div id="view-training" class="app-view hidden space-y-6">
+                    <div class="bg-white rounded-3xl border border-slate-200 shadow-sm p-8">
+                        <h3 class="text-2xl font-black mb-2">Private Pilot Stage 2</h3>
+                        <p class="text-sm text-slate-500 font-bold mb-6">Flight maneuver proficiency and pattern consistency</p>
+                        <div class="h-4 bg-slate-100 rounded-full overflow-hidden mb-2"><div class="h-full bg-pbOrange w-[68%]"></div></div>
+                        <p class="text-xs font-black text-slate-400 uppercase tracking-widest text-right">68% Complete</p>
+                    </div>
+                </div>
+
+                <div id="view-schedule" class="app-view hidden flex flex-col h-full min-h-[600px]">
+                    <div class="flex justify-between items-center mb-4 shrink-0">
+                        <div class="flex space-x-2">
+                            <input type="date" id="filter-date" class="px-4 py-2 rounded-xl border border-slate-200 font-bold text-sm outline-none focus:border-pbOrange">
+                            <select id="filter-aircraft" class="px-4 py-2 rounded-xl border border-slate-200 font-bold text-sm outline-none">
+                                <option value="All">All Fleet</option>
+                            </select>
+                        </div>
+                        <button onclick="openModal()" class="bg-pbOrange hover:bg-pbOrangeMid text-white px-6 py-2 rounded-xl font-black text-xs shadow-lg uppercase tracking-widest transition"><i class="fas fa-plus mr-2"></i>New Reservation</button>
+                    </div>
+                    
+                    <div class="flex-1 bg-white rounded-3xl shadow-sm border border-slate-200 flex flex-col overflow-hidden">
+                        <div class="schedule-grid-container bg-slate-50 border-b border-slate-200 sticky top-0 z-10 font-black text-sm uppercase text-slate-600" id="schedule-header">
+                            <div class="p-4 border-r border-slate-200"></div>
+                            </div>
+                        <div class="flex-1 overflow-y-auto custom-scrollbar relative" id="schedule-body">
+                            </div>
+                    </div>
+                </div>
+
+                <div id="view-instructors" class="app-view hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="instructors-grid"></div>
+                </div>
+
+                <div id="view-aircraft" class="app-view hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6" id="aircraft-grid"></div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <div id="res-modal-overlay" class="hidden fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 transition-opacity" onclick="closeModal()"></div>
+    <aside id="res-modal" class="fixed top-0 right-0 h-full w-[450px] bg-white shadow-2xl z-50 transform translate-x-full flex flex-col transition-transform duration-300">
+        <div class="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+            <h3 id="modal-title" class="text-xl font-black italic uppercase tracking-tight text-slate-800">Dispatch Request</h3>
+            <button onclick="closeModal()" class="text-slate-400 hover:text-pbOrange transition text-xl"><i class="fas fa-times"></i></button>
+        </div>
+        
+        <div class="p-6 flex-1 overflow-y-auto space-y-5 custom-scrollbar">
+            <input type="hidden" id="form-id">
+            
+            <div id="conflict-warning" class="hidden p-4 bg-red-50 border border-red-200 rounded-xl text-red-600 text-xs font-bold mb-4">
+                <i class="fas fa-exclamation-triangle mr-1"></i> <span id="conflict-msg"></span>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Date</label>
+                <input type="date" id="form-date" class="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 font-bold text-sm focus:border-pbOrange outline-none">
+            </div>
+            
+            <div class="grid grid-cols-2 gap-4">
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Start Time</label>
+                    <select id="form-start" class="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 font-bold text-sm focus:border-pbOrange outline-none"></select>
+                </div>
+                <div class="space-y-1">
+                    <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Duration</label>
+                    <select id="form-duration" class="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 font-bold text-sm focus:border-pbOrange outline-none">
+                        <option value="1">1.0 hrs</option>
+                        <option value="1.5">1.5 hrs</option>
+                        <option value="2">2.0 hrs</option>
+                        <option value="2.5">2.5 hrs</option>
+                        <option value="3">3.0 hrs</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Aircraft</label>
+                <select id="form-aircraft" class="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 font-bold text-sm focus:border-pbOrange outline-none"></select>
+            </div>
+
+            <div class="space-y-1">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Instructor</label>
+                <select id="form-instructor" class="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 font-bold text-sm focus:border-pbOrange outline-none"></select>
+            </div>
+            
+            <div class="space-y-1">
+                <label class="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Notes</label>
+                <input type="text" id="form-notes" placeholder="e.g., Solo pattern work" class="w-full bg-slate-50 p-4 rounded-xl border border-slate-200 font-bold text-sm focus:border-pbOrange outline-none">
+            </div>
+        </div>
+        
+        <div class="p-6 border-t border-slate-100 bg-white space-y-3">
+            <button onclick="saveReservation()" class="w-full bg-pbOrange hover:bg-pbOrangeMid text-white py-4 rounded-xl font-black uppercase tracking-widest text-xs shadow-lg transition">Save Reservation</button>
+            <button id="btn-delete" onclick="deleteReservation()" class="hidden w-full bg-white text-red-500 border border-red-200 hover:bg-red-50 py-4 rounded-xl font-black uppercase tracking-widest text-xs transition">Delete Block</button>
+        </div>
+    </aside>
+
+    <script>
+        // --- CONSTANTS & DATA SEEDING ---
+        const USER = "Ken Rose";
+        const TODAY = new Date().toISOString().split('T')[0];
+        document.getElementById('filter-date').value = TODAY;
+        document.getElementById('current-date-display').innerText = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric', year: 'numeric' });
+
+        const FLEET = ["N627DC", "N625DC", "N618DC", "N595GL", "N82ZZ", "N942RM"];
+        const INSTRUCTORS = ["Samantha Salah", "Cory Adams", "Laura Chen"];
+        
+        const SEED_DATA = [
+            { id: 1, pilot: USER, date: TODAY, start: 8, duration: 2, aircraft: "N627DC", instructor: "None", notes: "Solo Check" },
+            { id: 2, pilot: "Ghost User", date: TODAY, start: 10, duration: 1.5, aircraft: "N627DC", instructor: "Samantha Salah", notes: "Private Pilot" },
+            { id: 3, pilot: USER, date: TODAY, start: 13, duration: 2, aircraft: "N625DC", instructor: "Cory Adams", notes: "Dual IFR" },
+            { id: 4, pilot: "Ghost User", date: TODAY, start: 9, duration: 3, aircraft: "N82ZZ", instructor: "None", notes: "Cross Country" },
+            { id: 5, pilot: "Ghost User", date: TODAY, start: 14, duration: 2, aircraft: "N942RM", instructor: "Laura Chen", notes: "Comm Check" }
+        ];
+
+        let state = {
+            reservations: []
+        };
+
+        // --- INIT & STORAGE ---
+        function init() {
+            const stored = localStorage.getItem('pilotbase_data');
+            if (stored) {
+                state = JSON.parse(stored);
+            } else {
+                state.reservations = [...SEED_DATA];
+                saveState();
+            }
+            populateDropdowns();
+            renderSchedule();
+            renderInstructors();
+            renderAircraft();
+            updateHomeStats();
+        }
+
+        function saveState() {
+            localStorage.setItem('pilotbase_data', JSON.stringify(state));
+        }
+
+        function resetData() {
+            if(confirm("Are you sure you want to reset all data to default?")) {
+                localStorage.removeItem('pilotbase_data');
+                init();
+            }
+        }
+
+        // --- NAVIGATION ---
+        function login() {
+            document.getElementById('view-login').classList.add('hidden');
+            document.getElementById('app-shell').classList.remove('hidden');
+            nav('home');
+        }
+
+        function logout() {
+            document.getElementById('app-shell').classList.add('hidden');
+            document.getElementById('view-login').classList.remove('hidden');
+        }
+
+        function nav(viewId) {
+            document.querySelectorAll('.app-view').forEach(v => v.classList.add('hidden'));
+            document.querySelectorAll('.nav-btn').forEach(btn => {
+                btn.classList.remove('bg-pbOrange', 'text-white', 'shadow-lg');
+                btn.classList.add('text-slate-400');
+            });
+            
+            document.getElementById(`view-${viewId}`).classList.remove('hidden');
+            const btn = document.getElementById(`nav-${viewId}`);
+            btn.classList.remove('text-slate-400');
+            btn.classList.add('bg-pbOrange', 'text-white', 'shadow-lg');
+            
+            document.getElementById('page-title').innerText = viewId.charAt(0).toUpperCase() + viewId.slice(1);
+            
+            if(viewId === 'schedule') renderSchedule();
+        }
+
+        // --- RENDERING ---
+        function populateDropdowns() {
+            const acSelects = [document.getElementById('filter-aircraft'), document.getElementById('form-aircraft')];
+            const instSelect = document.getElementById('form-instructor');
+            const timeSelect = document.getElementById('form-start');
+
+            acSelects.forEach(select => {
+                select.innerHTML = select.id === 'filter-aircraft' ? '<option value="All">All Fleet</option>' : '';
+                FLEET.forEach(ac => select.add(new Option(ac, ac)));
+            });
+
+            instSelect.innerHTML = '<option value="None">None (Solo)</option>';
+            INSTRUCTORS.forEach(inst => instSelect.add(new Option(inst, inst)));
+
+            timeSelect.innerHTML = '';
+            for(let i=6; i<=20; i++) {
+                let display = i > 12 ? `${i-12}:00 PM` : `${i}:00 AM`;
+                if(i===12) display = "12:00 PM";
+                timeSelect.add(new Option(display, i));
+            }
+        }
+
+        function updateHomeStats() {
+            const todayRes = state.reservations.filter(r => r.pilot === USER && r.date >= TODAY).sort((a,b) => a.start - b.start);
+            const display = document.getElementById('home-next-flight');
+            if(todayRes.length > 0) {
+                const r = todayRes[0];
+                const ampm = r.start >= 12 ? 'PM' : 'AM';
+                const hr = r.start > 12 ? r.start - 12 : r.start;
+                display.innerHTML = `<div class="flex items-center justify-between"><div class="flex items-center space-x-4"><div class="w-16 h-16 rounded-2xl bg-pbOrange/10 text-pbOrange flex items-center justify-center font-black text-xl"><i class="fas fa-plane"></i></div><div><p class="text-xl font-black">${r.aircraft}</p><p class="text-sm font-bold text-slate-500">${r.date} @ ${hr}:00 ${ampm}</p></div></div><button onclick="nav('schedule')" class="text-xs font-black uppercase text-pbOrange hover:underline">View Schedule</button></div>`;
+            } else {
+                display.innerHTML = `<p class="font-bold text-slate-500">No upcoming flights scheduled.</p>`;
+            }
+        }
+
+        function renderSchedule() {
+            const filterDate = document.getElementById('filter-date').value;
+            const filterAc = document.getElementById('filter-aircraft').value;
+            
+            const header = document.getElementById('schedule-header');
+            const body = document.getElementById('schedule-body');
+            
+            let displayFleet = filterAc === 'All' ? FLEET : [filterAc];
+            
+            // Rebuild Header
+            header.style.gridTemplateColumns = `80px repeat(${displayFleet.length}, 1fr)`;
+            let headerHTML = `<div class="p-4 border-r border-slate-200"></div>`;
+            displayFleet.forEach(ac => {
+                headerHTML += `<div class="p-4 border-r border-slate-200 text-center flex flex-col justify-center"><span class="${ac === 'N618DC' ? 'text-red-500' : 'text-pbOrange'}">${ac}</span></div>`;
+            });
+            header.innerHTML = headerHTML;
+
+            // Rebuild Body
+            body.innerHTML = '';
+            const rowHeight = 60; // pixels per hour
+            
+            // Draw background grid lines
+            let gridHTML = '<div class="absolute inset-0 z-0">';
+            for(let h=6; h<=21; h++) {
+                let display = h > 12 ? `${h-12} PM` : `${h} AM`;
+                if(h===12) display = "12 PM";
+                gridHTML += `<div class="flex border-b border-slate-100" style="height: ${rowHeight}px;">
+                                <div class="w-[80px] shrink-0 border-r border-slate-200 bg-slate-50/50 flex justify-center py-2 text-[10px] font-black text-slate-400">${display}</div>
+                                <div class="flex-1 flex">`;
+                displayFleet.forEach(() => {
+                    gridHTML += `<div class="flex-1 border-r border-slate-100"></div>`;
+                });
+                gridHTML += `</div></div>`;
+            }
+            gridHTML += '</div>';
+            body.innerHTML = gridHTML;
+
+            // Draw Reservations
+            const resContainer = document.createElement('div');
+            resContainer.className = 'absolute inset-0 z-10 pointer-events-none flex';
+            resContainer.style.paddingLeft = '80px'; // Offset time column
+            
+            displayFleet.forEach((ac, idx) => {
+                const col = document.createElement('div');
+                col.className = 'flex-1 relative pointer-events-auto';
+                
+                // Maint block for N618DC
+                if(ac === 'N618DC') {
+                    col.innerHTML += `<div class="absolute inset-0 bg-red-50/50 flex items-center justify-center opacity-80"><span class="text-xs text-red-400 font-black rotate-90 whitespace-nowrap">MAINTENANCE</span></div>`;
+                }
+
+                const dayRes = state.reservations.filter(r => r.date === filterDate && r.aircraft === ac);
+                dayRes.forEach(r => {
+                    const top = (r.start - 6) * rowHeight;
+                    const height = r.duration * rowHeight;
+                    const isKen = r.pilot === USER;
+                    
+                    const block = document.createElement('div');
+                    block.className = `absolute left-2 right-2 rounded-xl p-3 shadow-sm border overflow-hidden cursor-pointer transition transform hover:scale-[1.02] ${isKen ? 'bg-pbOrange border-pbOrangeMid text-white z-20 shadow-md' : 'ghost-res border-slate-300 text-slate-500 z-10'}`;
+                    block.style.top = `${top + 2}px`;
+                    block.style.height = `${height - 4}px`;
+                    
+                    if(isKen) {
+                        block.onclick = () => openModal(r.id);
+                        block.innerHTML = `<p class="text-[10px] font-black uppercase tracking-widest opacity-80 mb-1">${r.pilot}</p><p class="text-xs font-bold leading-tight">${r.notes || 'Reserved'}</p>`;
+                    } else {
+                        block.innerHTML = `<p class="text-[10px] font-black uppercase tracking-widest opacity-60">Reserved</p>`;
+                    }
+                    col.appendChild(block);
+                });
+                resContainer.appendChild(col);
+            });
+            body.appendChild(resContainer);
+        }
+
+        function renderInstructors() {
+            const html = INSTRUCTORS.map(i => `
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col items-center text-center">
+                    <div class="w-20 h-20 bg-slate-100 rounded-full mb-4 flex items-center justify-center text-2xl text-slate-400"><i class="fas fa-user-tie"></i></div>
+                    <h4 class="font-black text-lg">${i}</h4>
+                    <p class="text-xs font-bold text-pbOrange uppercase mb-4">CFI / CFII</p>
+                    <button class="w-full py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-500 hover:bg-pbOrange hover:text-white transition">View Schedule</button>
+                </div>
+            `).join('');
+            document.getElementById('instructors-grid').innerHTML = html;
+        }
+
+        function renderAircraft() {
+            const html = FLEET.map(a => `
+                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm flex flex-col">
+                    <div class="h-32 bg-slate-100 rounded-2xl mb-4 flex items-center justify-center text-4xl text-slate-300"><i class="fas fa-plane"></i></div>
+                    <div class="flex justify-between items-start mb-2">
+                        <h4 class="font-black text-xl">${a}</h4>
+                        <span class="px-2 py-1 text-[9px] font-black uppercase rounded ${a === 'N618DC' ? 'bg-red-100 text-red-600' : 'bg-emerald-100 text-emerald-600'}">${a === 'N618DC' ? 'Maint' : 'Active'}</span>
+                    </div>
+                    <p class="text-xs font-bold text-slate-400 uppercase mb-4">Diamond DA20</p>
+                    <button class="w-full mt-auto py-2 bg-slate-50 rounded-xl text-xs font-bold text-slate-500 hover:bg-pbOrange hover:text-white transition">Fleet History</button>
+                </div>
+            `).join('');
+            document.getElementById('aircraft-grid').innerHTML = html;
+        }
+
+        // --- MODAL & LOGIC ---
+        function openModal(resId = null) {
+            document.getElementById('res-modal-overlay').classList.remove('hidden');
+            const modal = document.getElementById('res-modal');
+            modal.classList.remove('translate-x-full');
+            document.getElementById('conflict-warning').classList.add('hidden');
+
+            if(resId) {
+                const r = state.reservations.find(x => x.id === resId);
+                document.getElementById('modal-title').innerText = "Edit Dispatch";
+                document.getElementById('form-id').value = r.id;
+                document.getElementById('form-date').value = r.date;
+                document.getElementById('form-start').value = r.start;
+                document.getElementById('form-duration').value = r.duration;
+                document.getElementById('form-aircraft').value = r.aircraft;
+                document.getElementById('form-instructor').value = r.instructor;
+                document.getElementById('form-notes').value = r.notes;
+                document.getElementById('btn-delete').classList.remove('hidden');
+            } else {
+                document.getElementById('modal-title').innerText = "New Dispatch";
+                document.getElementById('form-id').value = "";
+                document.getElementById('form-date').value = document.getElementById('filter-date').value;
+                document.getElementById('form-start').value = "8";
+                document.getElementById('form-duration').value = "1";
+                document.getElementById('form-aircraft').value = FLEET[0];
+                document.getElementById('form-instructor').value = "None";
+                document.getElementById('form-notes').value = "";
+                document.getElementById('btn-delete').classList.add('hidden');
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('res-modal-overlay').classList.add('hidden');
+            document.getElementById('res-modal').classList.add('translate-x-full');
+        }
+
+        function checkConflict(newRes) {
+            for (let r of state.reservations) {
+                if (r.id === newRes.id) continue;
+                if (r.date !== newRes.date) continue;
+                
+                // Check time overlap
+                const resEnd = newRes.start + newRes.duration;
+                const rEnd = r.start + r.duration;
+                const overlaps = (newRes.start < rEnd) && (resEnd > r.start);
+                
+                if (overlaps) {
+                    if (r.aircraft === newRes.aircraft) return `Aircraft ${r.aircraft} is already booked.`;
+                    if (newRes.instructor !== "None" && r.instructor === newRes.instructor) return `Instructor ${r.instructor} is booked.`;
+                }
+            }
+            return null; // Return null string when there are no conflicts
+        }
+
+        function saveReservation() {
+            const idVal = document.getElementById('form-id').value;
+            const newRes = {
+                id: idVal ? parseInt(idVal) : Date.now(),
+                pilot: USER,
+                date: document.getElementById('form-date').value,
+                start: parseFloat(document.getElementById('form-start').value),
+                duration: parseFloat(document.getElementById('form-duration').value),
+                aircraft: document.getElementById('form-aircraft').value,
+                instructor: document.getElementById('form-instructor').value,
+                notes: document.getElementById('form-notes').value
+            };
+
+            const conflictErrorString = checkConflict(newRes);
+            if(conflictErrorString) {
+                const warn = document.getElementById('conflict-warning');
+                warn.classList.remove('hidden');
+                document.getElementById('conflict-msg').innerText = conflictErrorString;
+                return;
+            }
+
+            if(idVal) {
+                const idx = state.reservations.findIndex(r => r.id === newRes.id);
+                state.reservations[idx] = newRes;
+            } else {
+                state.reservations.push(newRes);
+            }
+
+            saveState();
+            closeModal();
+            updateHomeStats();
+            renderSchedule();
+        }
+
+        function deleteReservation() {
+            const idVal = document.getElementById('form-id').value;
+            if(idVal && confirm("Are you sure you want to delete this reservation?")) {
+                state.reservations = state.reservations.filter(r => r.id !== parseInt(idVal));
+                saveState();
+                closeModal();
+                updateHomeStats();
+                renderSchedule();
+            }
+        }
+
+        // Listeners
+        document.getElementById('filter-date').addEventListener('change', renderSchedule);
+        document.getElementById('filter-aircraft').addEventListener('change', renderSchedule);
+
+        // Boot
+        init();
+    </script>
+</body>
+</html>
